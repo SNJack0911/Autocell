@@ -19,24 +19,20 @@
   11  cell : LBRACKET INT COMMA INT RBRACKET
 
   12  expressions : expression
-  13              | multiplication
-  14              | addition
+  13              | expressions ADD expression
+  14              | expressions SUB expression
+  15              | expressions MUL expression
+  16              | expressions DIV expression
+  17              | expressions MOD expression
 
-  15  addition : expressions ADD expression
-  16           | expressions SUB expression
+  18  expression : ADD expression
+  19             | SUB expression
+  20             | cell
+  21             | INT
+  22             | ID
+  23             | LPAREN expressions RPAREN
 
-  17  multiplication : expressions MUL expression
-  18                 | expressions DIV expression
-  19                 | expressions MOD expression
-
-  20  expression : ADD expression
-  21             | SUB expression
-  22             | cell
-  23             | INT
-  24             | ID
-  25             | LPAREN expressions RPAREN
-
-  26  %entry% : '\001' program
+  24  %entry% : '\001' program
 
 state 0
 	$accept : . %entry% $end  (0)
@@ -48,7 +44,7 @@ state 0
 
 
 state 1
-	%entry% : '\001' . program  (26)
+	%entry% : '\001' . program  (24)
 
 	INT  shift 3
 	.  error
@@ -70,9 +66,9 @@ state 3
 
 
 state 4
-	%entry% : '\001' program .  (26)
+	%entry% : '\001' program .  (24)
 
-	.  reduce 26
+	.  reduce 24
 
 
 state 5
@@ -260,8 +256,6 @@ state 28
 	cell  goto 36
 	expressions  goto 37
 	expression  goto 38
-	multiplication  goto 39
-	addition  goto 40
 
 
 state 29
@@ -276,21 +270,19 @@ state 29
 	.  error
 
 	cell  goto 36
-	expressions  goto 41
+	expressions  goto 39
 	expression  goto 38
-	multiplication  goto 39
-	addition  goto 40
 
 
 state 30
 	cell : LBRACKET INT COMMA . INT RBRACKET  (11)
 
-	INT  shift 42
+	INT  shift 40
 	.  error
 
 
 state 31
-	expression : ADD . expression  (20)
+	expression : ADD . expression  (18)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -301,11 +293,11 @@ state 31
 	.  error
 
 	cell  goto 36
-	expression  goto 43
+	expression  goto 41
 
 
 state 32
-	expression : SUB . expression  (21)
+	expression : SUB . expression  (19)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -316,11 +308,11 @@ state 32
 	.  error
 
 	cell  goto 36
-	expression  goto 44
+	expression  goto 42
 
 
 state 33
-	expression : LPAREN . expressions RPAREN  (25)
+	expression : LPAREN . expressions RPAREN  (23)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -331,43 +323,41 @@ state 33
 	.  error
 
 	cell  goto 36
-	expressions  goto 45
+	expressions  goto 43
 	expression  goto 38
-	multiplication  goto 39
-	addition  goto 40
 
 
 state 34
-	expression : ID .  (24)
-
-	.  reduce 24
-
-
-state 35
-	expression : INT .  (23)
-
-	.  reduce 23
-
-
-state 36
-	expression : cell .  (22)
+	expression : ID .  (22)
 
 	.  reduce 22
 
 
+state 35
+	expression : INT .  (21)
+
+	.  reduce 21
+
+
+state 36
+	expression : cell .  (20)
+
+	.  reduce 20
+
+
 state 37
 	statement : ID ASSIGN expressions .  (10)
-	addition : expressions . ADD expression  (15)
-	addition : expressions . SUB expression  (16)
-	multiplication : expressions . MUL expression  (17)
-	multiplication : expressions . DIV expression  (18)
-	multiplication : expressions . MOD expression  (19)
+	expressions : expressions . ADD expression  (13)
+	expressions : expressions . SUB expression  (14)
+	expressions : expressions . MUL expression  (15)
+	expressions : expressions . DIV expression  (16)
+	expressions : expressions . MOD expression  (17)
 
-	ADD  shift 46
-	SUB  shift 47
-	MUL  shift 48
-	DIV  shift 49
-	MOD  shift 50
+	ADD  shift 44
+	SUB  shift 45
+	MUL  shift 46
+	DIV  shift 47
+	MOD  shift 48
 	EOF  reduce 10
 	LBRACKET  reduce 10
 	ID  reduce 10
@@ -380,73 +370,91 @@ state 38
 
 
 state 39
-	expressions : multiplication .  (13)
-
-	.  reduce 13
-
-
-state 40
-	expressions : addition .  (14)
-
-	.  reduce 14
-
-
-state 41
 	statement : cell ASSIGN expressions .  (9)
-	addition : expressions . ADD expression  (15)
-	addition : expressions . SUB expression  (16)
-	multiplication : expressions . MUL expression  (17)
-	multiplication : expressions . DIV expression  (18)
-	multiplication : expressions . MOD expression  (19)
+	expressions : expressions . ADD expression  (13)
+	expressions : expressions . SUB expression  (14)
+	expressions : expressions . MUL expression  (15)
+	expressions : expressions . DIV expression  (16)
+	expressions : expressions . MOD expression  (17)
 
-	ADD  shift 46
-	SUB  shift 47
-	MUL  shift 48
-	DIV  shift 49
-	MOD  shift 50
+	ADD  shift 44
+	SUB  shift 45
+	MUL  shift 46
+	DIV  shift 47
+	MOD  shift 48
 	EOF  reduce 9
 	LBRACKET  reduce 9
 	ID  reduce 9
 
 
-state 42
+state 40
 	cell : LBRACKET INT COMMA INT . RBRACKET  (11)
 
-	RBRACKET  shift 51
+	RBRACKET  shift 49
 	.  error
+
+
+state 41
+	expression : ADD expression .  (18)
+
+	.  reduce 18
+
+
+state 42
+	expression : SUB expression .  (19)
+
+	.  reduce 19
 
 
 state 43
-	expression : ADD expression .  (20)
+	expressions : expressions . ADD expression  (13)
+	expressions : expressions . SUB expression  (14)
+	expressions : expressions . MUL expression  (15)
+	expressions : expressions . DIV expression  (16)
+	expressions : expressions . MOD expression  (17)
+	expression : LPAREN expressions . RPAREN  (23)
 
-	.  reduce 20
-
-
-state 44
-	expression : SUB expression .  (21)
-
-	.  reduce 21
-
-
-state 45
-	addition : expressions . ADD expression  (15)
-	addition : expressions . SUB expression  (16)
-	multiplication : expressions . MUL expression  (17)
-	multiplication : expressions . DIV expression  (18)
-	multiplication : expressions . MOD expression  (19)
-	expression : LPAREN expressions . RPAREN  (25)
-
-	ADD  shift 46
-	SUB  shift 47
-	MUL  shift 48
-	DIV  shift 49
-	MOD  shift 50
-	RPAREN  shift 52
+	ADD  shift 44
+	SUB  shift 45
+	MUL  shift 46
+	DIV  shift 47
+	MOD  shift 48
+	RPAREN  shift 50
 	.  error
 
 
+state 44
+	expressions : expressions ADD . expression  (13)
+
+	LBRACKET  shift 22
+	ADD  shift 31
+	SUB  shift 32
+	LPAREN  shift 33
+	ID  shift 34
+	INT  shift 35
+	.  error
+
+	cell  goto 36
+	expression  goto 51
+
+
+state 45
+	expressions : expressions SUB . expression  (14)
+
+	LBRACKET  shift 22
+	ADD  shift 31
+	SUB  shift 32
+	LPAREN  shift 33
+	ID  shift 34
+	INT  shift 35
+	.  error
+
+	cell  goto 36
+	expression  goto 52
+
+
 state 46
-	addition : expressions ADD . expression  (15)
+	expressions : expressions MUL . expression  (15)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -461,7 +469,7 @@ state 46
 
 
 state 47
-	addition : expressions SUB . expression  (16)
+	expressions : expressions DIV . expression  (16)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -476,7 +484,7 @@ state 47
 
 
 state 48
-	multiplication : expressions MUL . expression  (17)
+	expressions : expressions MOD . expression  (17)
 
 	LBRACKET  shift 22
 	ADD  shift 31
@@ -491,76 +499,46 @@ state 48
 
 
 state 49
-	multiplication : expressions DIV . expression  (18)
-
-	LBRACKET  shift 22
-	ADD  shift 31
-	SUB  shift 32
-	LPAREN  shift 33
-	ID  shift 34
-	INT  shift 35
-	.  error
-
-	cell  goto 36
-	expression  goto 56
-
-
-state 50
-	multiplication : expressions MOD . expression  (19)
-
-	LBRACKET  shift 22
-	ADD  shift 31
-	SUB  shift 32
-	LPAREN  shift 33
-	ID  shift 34
-	INT  shift 35
-	.  error
-
-	cell  goto 36
-	expression  goto 57
-
-
-state 51
 	cell : LBRACKET INT COMMA INT RBRACKET .  (11)
 
 	.  reduce 11
 
 
-state 52
-	expression : LPAREN expressions RPAREN .  (25)
+state 50
+	expression : LPAREN expressions RPAREN .  (23)
 
-	.  reduce 25
+	.  reduce 23
+
+
+state 51
+	expressions : expressions ADD expression .  (13)
+
+	.  reduce 13
+
+
+state 52
+	expressions : expressions SUB expression .  (14)
+
+	.  reduce 14
 
 
 state 53
-	addition : expressions ADD expression .  (15)
+	expressions : expressions MUL expression .  (15)
 
 	.  reduce 15
 
 
 state 54
-	addition : expressions SUB expression .  (16)
+	expressions : expressions DIV expression .  (16)
 
 	.  reduce 16
 
 
 state 55
-	multiplication : expressions MUL expression .  (17)
+	expressions : expressions MOD expression .  (17)
 
 	.  reduce 17
 
 
-state 56
-	multiplication : expressions DIV expression .  (18)
-
-	.  reduce 18
-
-
-state 57
-	multiplication : expressions MOD expression .  (19)
-
-	.  reduce 19
-
-
-22 terminals, 13 nonterminals
-27 grammar rules, 58 states
+22 terminals, 11 nonterminals
+25 grammar rules, 56 states

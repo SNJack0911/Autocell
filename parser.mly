@@ -120,7 +120,9 @@ statement:
 		}
 |	ID ASSIGN expressions
 		{
-			NOP
+			(* declare the variable (assign a register) and build SET_VAR *)
+            let r = declare_var $1 in
+            SET_VAR (r, $3)
 		}
 ;
 
@@ -138,39 +140,34 @@ cell:
 expressions:
 	expression
 		{ $1 }
-|	multiplication 
-		{ $1 }
-|	 addition
-		{ $1 }
-;	
-addition:
-    expressions ADD expression
-        { printf "+\n"; NONE}
+|	expressions ADD expression
+        { BINOP(OP_ADD, $1, $3) }
 |	expressions SUB expression
-        { printf "-\n"; NONE}
-;
-
-multiplication:
-    expressions MUL expression
-        { printf "*\n"; NONE}
+        { BINOP(OP_SUB, $1, $3) }
+|	expressions MUL expression
+        { BINOP(OP_MUL, $1, $3) }
 |	expressions DIV expression
-        { printf "/\n"; NONE}
+        { BINOP(OP_DIV, $1, $3) }
 |	expressions MOD expression
-        { printf "%%\n"; NONE}
-;
+        { BINOP(OP_MOD, $1, $3) }
+;	
 expression:
-	ADD expression	
-        { printf " +\n"; NONE }
+	ADD expression
+        { $2 }
 |	SUB expression
-        { printf " -\n"; NONE }
+        { NEG($2) }
 |	cell
 		{ printf "[%d,%d]\n" (fst $1) (snd $1); CELL (0, fst $1, snd $1) }
 |	INT
 		{ printf "%d\n" $1; CST $1 }
 |	ID	
-		{ printf "%s\n" $1; NONE }
+		{
+            let r = get_var $1 in
+            if r = -1 then error (sprintf "undeclared variable %s" $1)
+            else VAR r
+        }
 |	LPAREN expressions RPAREN
-		{ printf "()\n" ; NONE }		
+		{ $2 }
 ;
 
 

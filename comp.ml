@@ -59,16 +59,39 @@ let rec comp_expr e =
 
 
 	match e with
-	| NONE ->
-		(0, [])
-	| CELL (f, x, y) ->
-		let v = new_reg () in
-		(v, [
-			INVOKE (cGET + f, v, pos x y)
-		])
-	| _ ->
-		failwith "bad expression"
-
+    | NONE ->
+        (0, [])
+    | CELL (f, x, y) ->
+        let v = new_reg () in
+        (v, [
+            INVOKE (cGET + f, v, pos x y)
+        ])
+    | CST i ->
+        let v = new_reg () in
+        (v, [ SETI(v, i) ])
+    | VAR r ->
+        (* copy variable register content into a fresh register *)
+        let v = new_reg () in
+        (v, [ SET(v, r) ])
+    | NEG e1 ->
+        (* compute -e1 by multiplying by -1 *)
+        let (v1, q1) = comp_expr e1 in
+        let tmp = new_reg () in
+        let v = new_reg () in
+        (v, q1 @ [ SETI(tmp, -1); MUL(v, tmp, v1) ])
+    | BINOP (op, e1, e2) ->
+        let (v1, q1) = comp_expr e1 in
+        let (v2, q2) = comp_expr e2 in
+        let v = new_reg () in
+        let op_quad =
+            match op with
+            | OP_ADD -> ADD(v, v1, v2)
+            | OP_SUB -> SUB(v, v1, v2)
+            | OP_MUL -> MUL(v, v1, v2)
+            | OP_DIV -> DIV(v, v1, v2)
+            | OP_MOD -> MOD(v, v1, v2)
+				in
+        (v, q1 @ q2 @ [op_quad])
 
 (** Compile a condition.
 	@param c		Condition to compile.
@@ -98,6 +121,10 @@ let rec comp_stmt s =
 		q @ [
 			INVOKE (cSET, v, f)
 		]
+	| SET_VAR (r, e) ->
+			let (v, q) = comp_expr e in
+			(* copy expression result into the variable register *)
+			q @ [ SET(r, v) ]
 	| _ ->
 		failwith "bad instruction"
 
