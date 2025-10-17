@@ -53,6 +53,7 @@ let rec make_when f ws =
 %token LBRACKET RBRACKET
 %token DOT_DOT
 %token DOT
+%token NEG
 %token ADD
 %token SUB
 %token MUL
@@ -107,7 +108,7 @@ opt_statements:
 	/* empty */
 		{ NOP }
 |	opt_statements statement
-		{ $2 }
+		{ SEQ($1, $2) }
 ;
 
 
@@ -132,7 +133,7 @@ cell:
 	LBRACKET INT COMMA INT RBRACKET
 		{
 			if ($2 < -1) || ($2 > 1) then error "x out of range";
-			if ($4 < -1) || ($4 > 1) then error "x out of range";
+			if ($4 < -1) || ($4 > 1) then error "y out of range";
 			($2, $4)
 		}
 ;
@@ -150,16 +151,16 @@ expressions:
         { BINOP(OP_DIV, $1, $3) }
 |	expressions MOD expression
         { BINOP(OP_MOD, $1, $3) }
-;	
+;
 expression:
 	ADD expression
         { $2 }
 |	SUB expression
-        { NEG($2) }
+        { NEG ( $2) }
 |	cell
-		{ printf "[%d,%d]\n" (fst $1) (snd $1); CELL (0, fst $1, snd $1) }
+		{ CELL (0, fst $1, snd $1) }
 |	INT
-		{ printf "%d\n" $1; CST $1 }
+		{  CST ($1) }
 |	ID	
 		{
             let r = get_var $1 in
@@ -167,7 +168,7 @@ expression:
             else VAR r
         }
 |	LPAREN expressions RPAREN
-		{ $2 }
+		{  $2 }
 ;
 
 

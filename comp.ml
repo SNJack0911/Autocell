@@ -75,10 +75,10 @@ let rec comp_expr e =
         (v, [ SET(v, r) ])
     | NEG e1 ->
         (* compute -e1 by multiplying by -1 *)
-        let (v1, q1) = comp_expr e1 in
-        let tmp = new_reg () in
+        let (v, q) = comp_expr e1 in
+        let zero = new_reg () in
         let v = new_reg () in
-        (v, q1 @ [ SETI(tmp, -1); MUL(v, tmp, v1) ])
+        (v, q @ [ SETI(zero, 0); SUB(v, zero, v) ])
     | BINOP (op, e1, e2) ->
         let (v1, q1) = comp_expr e1 in
         let (v2, q2) = comp_expr e2 in
