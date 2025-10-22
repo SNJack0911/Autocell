@@ -56,42 +56,40 @@ let pos x y =
 	@param e	Expression to compile.
 	@return		(register containing the result, quads producing the result). *)
 let rec comp_expr e =
-
-
 	match e with
     | NONE ->
         (0, [])
-    | CELL (f, x, y) ->
-        let v = new_reg () in
-        (v, [
-            INVOKE (cGET + f, v, pos x y)
+    | CELL (f, val1, val2) ->
+        let value = new_reg () in
+        (value, [
+            INVOKE (cGET + f, value, pos val1 val2)
         ])
     | CST i ->
-        let v = new_reg () in
-        (v, [ SETI(v, i) ])
+        let value = new_reg () in
+        (value, [ SETI(value, i) ])
     | VAR r ->
         (* copy variable register content into a fresh register *)
-        let v = new_reg () in
-        (v, [ SET(v, r) ])
+        let value = new_reg () in
+        (value, [ SET(value, r) ])
     | NEG e1 ->
-        (* compute -e1 by multiplying by -1 *)
-        let (v, q) = comp_expr e1 in
+        (* compute -e1 by subtracting from 0 *)
+        let (value, quad) = comp_expr e1 in
         let zero = new_reg () in
         let v = new_reg () in
-        (v, q @ [ SETI(zero, 0); SUB(v, zero, v) ])
+        (v, quad @ [ SETI(zero, 0); SUB(v, zero, value) ])
     | BINOP (op, e1, e2) ->
-        let (v1, q1) = comp_expr e1 in
-        let (v2, q2) = comp_expr e2 in
-        let v = new_reg () in
+        let (val1, quad1) = comp_expr e1 in
+        let (val2, quad2) = comp_expr e2 in
+        let value = new_reg () in
         let op_quad =
             match op with
-            | OP_ADD -> ADD(v, v1, v2)
-            | OP_SUB -> SUB(v, v1, v2)
-            | OP_MUL -> MUL(v, v1, v2)
-            | OP_DIV -> DIV(v, v1, v2)
-            | OP_MOD -> MOD(v, v1, v2)
-				in
-        (v, q1 @ q2 @ [op_quad])
+            | OP_ADD -> ADD(value, val1, val2)
+            | OP_SUB -> SUB(value, val1, val2)
+            | OP_MUL -> MUL(value, val1, val2)
+            | OP_DIV -> DIV(value, val1, val2)
+            | OP_MOD -> MOD(value, val1, val2)
+        in
+        (value, quad1 @ quad2 @ [op_quad])
 
 (** Compile a condition.
 	@param c		Condition to compile.
@@ -99,10 +97,24 @@ let rec comp_expr e =
 	@param l_else	Label to branch to when the condition is false.
 	@return			Quads implementing the condition. *)
 let rec comp_cond c l_then l_else =
-
-
 	match c with
-
+	| COMP (op, e1, e2) ->
+		let (val1, quad1) = comp_expr e1 in
+		let (val2, quad2) = comp_expr e2 in
+		let jump_quad =
+			match op with
+			| COMP_LT -> GOTO_LT(l_then, val1, val2)
+			| COMP_GT -> GOTO_GT(l_then, val1, val2)
+			| COMP_LE -> GOTO_LE(l_then, val1, val2)
+			| COMP_GE -> GOTO_GE(l_then, val1, val2)
+			| COMP_EQ -> GOTO_EQ(l_then, val1, val2)
+			| COMP_NE -> GOTO_NE(l_then, val1, val2)
+		in
+		quad1 @ quad2 @ [
+			jump_quad;
+			GOTO(l_else);
+			LABEL(l_then);
+		]
 	| _ ->
 		failwith "bad condition"
 
@@ -114,17 +126,30 @@ let rec comp_stmt s =
 	match s with
 	| NOP ->
 		[]
+	| IF_THEN (cond, stmt_then, stmt_else) ->
+		let l_then = new_lab () in
+		let l_else = new_lab () in
+		let l_end = new_lab () in
+		let cond_quad = comp_cond cond l_then l_else in
+		let then_quad = comp_stmt stmt_then in
+		let else_quad = comp_stmt stmt_else in
+		cond_quad @ then_quad @ [
+			GOTO(l_end);
+			LABEL(l_else)
+		] @ else_quad @ [
+			LABEL(l_end)
+		]
 	| SEQ (s1, s2) ->
 		(comp_stmt s1) @ (comp_stmt s2)
-	| SET_CELL (f, e) ->
-		let (v, q) = comp_expr e in
-		q @ [
-			INVOKE (cSET, v, f)
+	| SET_CELL (0, expr) ->
+		let (value, quad) = comp_expr expr in
+		quad @ [
+			INVOKE (cSET, value, 0)
 		]
-	| SET_VAR (r, e) ->
-			let (v, q) = comp_expr e in
+	| SET_VAR (reg, expr) ->
+			let (value, quad) = comp_expr expr in
 			(* copy expression result into the variable register *)
-			q @ [ SET(r, v) ]
+			quad @ [ SET(reg, value) ]
 	| _ ->
 		failwith "bad instruction"
 

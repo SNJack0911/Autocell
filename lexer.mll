@@ -39,6 +39,10 @@ rule token = parse
 
 |	"end"			{ END }
 |	"of"			{ OF }
+|	"if"			{ IF }
+|	"then"			{ THEN }
+|	"else"			{ ELSE }
+|	"elsif"		{ ELSEIF }
 
 |	":="			{ ASSIGN }
 |	'.'				{ DOT }
@@ -53,6 +57,13 @@ rule token = parse
 |	'*'				{ MUL }
 |	'/'				{ DIV }
 |	'%'				{ MOD }
+|	'<'				{ LT }
+|	'>'				{ GT }
+|	"<="			{ LE }
+|	">="			{ GE }
+|	'='				{ EQ }
+|	"!="			{ NE }
+
 |	dec	as n		{ INT (int_of_string n) }
 |	str as id		{ ID id }
 
