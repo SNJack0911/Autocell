@@ -54,18 +54,25 @@ let rec make_when f ws =
 %token DOT_DOT
 %token DOT
 %token NEG
-%token ADD
-%token SUB
-%token MUL
-%token DIV
-%token MOD
+
+%token ADD SUB
+%token MUL DIV MOD
+
 %token IF THEN ELSE ELSEIF
+
+%token OR AND
+%token NOT
+
 %token LT GT LE GE EQ NE
 %token LPAREN RPAREN
 /* values */
 %token <string> ID
 %token<int> INT
 
+%left OR
+%left AND
+%right NOT
+%nonassoc LT GT LE GE EQ NE
 %left ADD SUB
 %left MUL DIV MOD
 
@@ -151,19 +158,29 @@ statement:
             SET_VAR (r, $3)
 		}
 ;
+
 condition:
-	expression LT expression
+|	 NOT condition
+        { NOT $2 }
+| 	condition AND condition
+        { AND($1, $3) }
+| 	condition OR condition
+        { OR($1, $3) }
+|	expression LT expression
 		{ COMP(COMP_LT,$1, $3) }
-  | expression GT expression
+| 	expression GT expression
 		{ COMP(COMP_GT,$1, $3) }
-  | expression LE expression
+| 	expression LE expression
 		{ COMP(COMP_LE,$1, $3) }
-  | expression GE expression
+| 	expression GE expression
 		{ COMP(COMP_GE,$1, $3) }
-  | expression EQ expression
+| 	expression EQ expression
 		{ COMP(COMP_EQ,$1, $3) }
-  | expression NE expression
+|	expression NE expression
 		{ COMP(COMP_NE,$1, $3) }
+  | LPAREN condition RPAREN
+        { $2 }
+;
 
 
 cell:
@@ -184,9 +201,9 @@ expression:
           else VAR r }
   | cell
         { CELL(0,fst $1, snd $1) }
-  | ADD expression
+  | ADD expression 
         { $2 }
-  | SUB expression
+  | SUB expression 
         { NEG($2) }
   | expression ADD expression
         { BINOP(OP_ADD, $1, $3) }

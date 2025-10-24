@@ -112,9 +112,22 @@ let rec comp_cond c l_then l_else =
 		in
 		quad1 @ quad2 @ [
 			jump_quad;
-			GOTO(l_else);
-			LABEL(l_then);
+			GOTO(l_else)
 		]
+	| NOT c1 ->
+			comp_cond c1 l_else l_then
+	| AND (c1, c2) ->
+			let l_mid = new_lab () in
+			let q1 = comp_cond c1 l_mid l_else in
+			let q2 = comp_cond c2 l_then l_else in
+			q1 @ [
+				LABEL(l_mid) 
+				] @ q2
+	| OR (c1, c2) ->
+			let l_mid = new_lab () in
+			let q1 = comp_cond c1 l_then l_mid in
+			let q2 = comp_cond c2 l_then l_else in
+			q1 @ [ LABEL(l_mid) ] @ q2
 	| _ ->
 		failwith "bad condition"
 
@@ -133,7 +146,9 @@ let rec comp_stmt s =
 		let cond_quad = comp_cond cond l_then l_else in
 		let then_quad = comp_stmt stmt_then in
 		let else_quad = comp_stmt stmt_else in
-		cond_quad @ then_quad @ [
+		cond_quad @ [
+			LABEL(l_then);
+		] @ then_quad @ [
 			GOTO(l_end);
 			LABEL(l_else)
 		] @ else_quad @ [

@@ -42,7 +42,10 @@ rule token = parse
 |	"if"			{ IF }
 |	"then"			{ THEN }
 |	"else"			{ ELSE }
-|	"elsif"		{ ELSEIF }
+|	"elsif"			{ ELSEIF }
+|   "&" 			{ AND }
+|   "|" 			{ OR }
+| 	"!"				{NOT}
 
 |	":="			{ ASSIGN }
 |	'.'				{ DOT }
@@ -50,7 +53,7 @@ rule token = parse
 |	','				{ COMMA }
 |	'['				{ LBRACKET }
 |	']'				{ RBRACKET }
-|	'+'				{ ADD }
+|	'+'				{ ADD}
 |	'-'				{ SUB }
 |	'('				{ LPAREN }
 |	')'				{ RPAREN }
